@@ -1,25 +1,40 @@
-name: Java CI/CD (Windows)
+name: Java CI/CD
 
 on:
   push:
-    branches: [main]
+    branches: ["main"]
 
 jobs:
-  build-and-deploy:
-    runs-on: windows-latest
+  build:
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           java-version: "17"
           distribution: "temurin"
+          cache: maven
 
-      - name: Build with Maven
+      - name: Build Project
         run: mvn clean package
 
-      - name: Run Application (CD Step)
-        run: java -jar target/*.jar
+      - name: Upload Build Artifact (CD Step)
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-jar
+          path: target/*.jar
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: production-jar
+
+      - name: Verify Deployment Package
+        run: ls -l
